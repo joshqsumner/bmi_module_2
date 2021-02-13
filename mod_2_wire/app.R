@@ -48,12 +48,12 @@ ui <- dashboardPage(
                                                column(width=8,
                                                       
                                                       conditionalPanel(condition = "input.slide === '1'",
-                                                      box(title = "Pick a Test Case", width = NULL, height="400px", 
+                                                      box(title = HTML("<em> Unit You Are In </em>"), width = NULL, height="400px", 
                                                           p("Either select an example case from the provided list or a random one from MDClone"),
                                                           br(),
                                                           radioButtons("subjectChosen", "Select Subject:", 
-                                                                       choices=c("Test 1", "Test 2", "Test 3", "Random"),
-                                                                       selected="Test 1"),
+                                                                       choices=c("Patient A", "Patient B", "Patient C", "Random Example"),
+                                                                       selected="Patient A"),
                                                           br(),
                                                           htmlOutput("firstSlide"),
                                                           br(),
@@ -224,7 +224,7 @@ ui <- dashboardPage(
                                                column(width=4,
                                                       
                                                       conditionalPanel(condition = "input.slide === '1'",
-                                                      box(title = "Patient Data", width = NULL, height="400px", 
+                                                      box(title = "Patient Data", width = NULL, height=NULL, 
                                                           p("Patient Information would be available to physician here", br(),br(),
                                                             tags$ol(
                                                               tags$li("Patient Anthropometrics"),
@@ -239,7 +239,7 @@ ui <- dashboardPage(
                                                       ), 
                                                       
                                                       conditionalPanel(condition = "input.slide === '2'",
-                                                                       box(title = "MDR Risk Notes", width = NULL, height="400px", 
+                                                                       box(title = "MDR Risk Notes", width = NULL, height=NULL, 
                                                                            p("(Risk Factors added to the patient record if they are not already present)", br(),br(),
                                                                              textOutput("MDR_txt"), br(), 
                                                                              HTML("- <em>More Notes Space</em>")
@@ -247,7 +247,7 @@ ui <- dashboardPage(
                                                                            )#close box
                                                                        ),
                                                       conditionalPanel(condition = "input.slide === '3'",
-                                                                       box(title = "GNB Risk Notes", width = NULL, height="400px", 
+                                                                       box(title = "GNB Risk Notes", width = NULL, height=NULL, 
                                                                            p("(Risk Factors added to the patient record if they are not already present)", br(),br(),
                                                                              textOutput("GNB_txt"), br(), 
                                                                              textOutput("MRSA_txt_1"), br(), 
@@ -256,7 +256,7 @@ ui <- dashboardPage(
                                                                        )#close box
                                                       ),
                                                       conditionalPanel(condition = "input.slide === '4'",
-                                                                       box(title = "MDR Risk Notes", width = NULL, height="400px", 
+                                                                       box(title = "MDR Risk Notes", width = NULL, height=NULL, 
                                                                            p("Risk Factors added to the patient record if they are not already present", br(),br(),
                                                                              textOutput("mrsa_risks_2"), br(), 
                                                                              HTML("- <em>More Notes Space</em>")
@@ -266,7 +266,7 @@ ui <- dashboardPage(
                                                       
                                                       
                                                       #end conditional panels for second column
-                                                      box(title = textOutput("Bottom_Panel_Title"), width = NULL, height="500px", 
+                                                      box(title = textOutput("Bottom_Panel_Title"), width = NULL, height=NULL, 
                                                           br(),
                                                           textOutput("Other_Bottom_Panel_Text"),
                                                           selectInput("slide",
@@ -336,19 +336,19 @@ server <- function(input, output, session) {
   # First Page Outputs
   output$firstSlide <- renderText({
     set.seed(678)
-    if (input$subjectChosen=="Test 1"){
+    if (input$subjectChosen=="Patient A"){
       text<-paste0("This subject is a 32 year old white male whose 
                    first ventilation was when they were 21 years old and 
                    who underwent a 'Continuous invasive mechanical ventilation for 96 consecutive hours or more'.")
-    } else if (input$subjectChosen=="Test 2"){
+    } else if (input$subjectChosen=="Patient A"){
       text<-paste0("This subject is an 88 year old black female whose 
                    first ventilation was when they were 69 years old and 
                    who underwent a 'Continuous invasive mechanical ventilation for 96 consecutive hours or more'.")
-    } else if (input$subjectChosen=="Test 3"){
+    } else if (input$subjectChosen=="Patient A"){
       text<-paste0("This subject is a 55 year old asian male whose 
                    first ventilation was when they were 47 years old and 
                    who underwent a 'Continuous invasive mechanical ventilation for 96 consecutive hours or more'.")
-    } else if (input$subjectChosen=="Random"){
+    } else if (input$subjectChosen=="Random Example"){
       if (is.na(subject()%>%pull(race)) & is.na(subject()%>%pull(sex))){
         RACE<-"person whose race and sex were not recorded"
         SEX<-""

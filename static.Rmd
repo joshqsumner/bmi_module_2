@@ -1,0 +1,228 @@
+---
+title: "Static R"
+author: "Josh Sumner"
+subtitle: 'Five Guys'
+output:
+  pdf_document:
+    highlight: tango
+    number_sections: no
+    toc: yes
+    toc_depth: '4'
+    includes:  
+      in_header: preamble-latex.tex
+  html_document:
+    code_folding: hide
+    highlight: textmate
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 4
+    toc_float: no
+  word_document:
+    toc: yes
+    toc_depth: '4'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, comment = "")
+knitr::include_graphics
+library(tidyverse)
+library(lubridate)
+library(stringr)
+library(RColorBrewer)
+library(plyr)
+library(jsonlite)
+library(httr)
+library(readxl)
+library(scales)
+library(rio)
+library(forcats)
+library(jsonlite)
+library(tinytex)
+
+theme_set(theme_minimal() +
+  theme(axis.line.y.left = element_line(),
+        axis.line.x.bottom = element_line()))
+spColors<-c(brewer.pal(7, "Dark2"))
+swColors<-c(brewer.pal(12, "Paired"))
+
+`%not_in%` <- purrr::negate(`%in%`)
+```
+
+## Update App
+
+#V1
+
+```{r}
+library(rsconnect)
+rsconnect::setAccountInfo(name='josh-sumner',
+			  token=Sys.getenv('rs_token'),
+			  secret=Sys.getenv('rs_secret'))
+```
+
+```{r}
+
+rsconnect::deployApp('./mod_2_wire/')
+```
+
+## look at data
+
+```{r}
+df<-read_csv("mod_2_wire/biomed2project-cleaning1.csv")
+rawMRSA<-read_csv("mrsa_raw.csv")
+gramNegRaw<-read_csv("gram_neg1_raw.csv")
+```
+
+
+```{r}
+head(df)
+head(rawMRSA)
+head(gramNegRaw)
+```
+
+```{r}
+test<-df%>%
+  select(age, ref.age.event)%>%
+  mutate(diff = age - ref.age.event)
+meanDiff<-mean(test$diff, na.rm=T)
+df%>%
+  ggplot(aes(color=sex))+
+  geom_segment(aes(y=ref.age.event, yend=age, x=age, xend=age))+
+  annotate("label",x= 100,y=40, label=paste0("Mean time from first event: \n",round(meanDiff, 2), " years"))
+
+
+# df%>%
+#   ggplot(aes(color=sex))+
+#   geom_point(aes(y=ref.age.event, x=age))
+```
+
+```{r}
+vap4 = df%>%drop_na(mdr.organism)%>%mutate(mdr.organism=ifelse(mdr.organism=="Acinetobacter calcoaceticus-Acinetobacter baumanii complex", "Acinetobacter calcoaceticus", mdr.organism))
+tab1 = prop.table(table(vap4$mdr.organism))
+tab1 = as.data.frame(tab1)
+colnames(tab1) = c("organism", "percentage")
+```
+
+
+```{r}
+ggplot(tab1, aes(x = reorder(organism, percentage), y = percentage))+
+  geom_bar(stat = "identity", fill = "#477fc9") + 
+  scale_y_continuous(labels = percent_format(), limits=c(0,1))+
+  geom_vline(xintercept=13.5, color="black", linetype=5)+
+  coord_flip() + 
+  annotate(geom="label", x=15, y=.7, label="Top 4 Account for 88.3% \n of all Organisms")+
+  ylab("Percentage") + 
+  xlab("Organism")+
+  theme(axis.text.y=element_text(size=8))+
+  ggsave("frequency_by_organism_2.png", width=6, height=4)
+```
+
+```{r}
+as.data.frame(prop.table(table(vap4$mdr.organism)))%>%arrange(desc(Freq))#%>%slice_head(n=4)%>%dplyr::summarize(sum=sum(Freq))
+```
+
+```{r}
+vap4 = gramNegRaw%>%drop_na(`Reference Event-Organism`)%>%filter(`Reference Event-Organism`!="censored")%>%
+  mutate(`Reference Event-Organism`=ifelse(`Reference Event-Organism`=="Acinetobacter calcoaceticus-Acinetobacter baumanii complex", "Acinetobacter calcoaceticus", `Reference Event-Organism`))
+tab1<-vap4%>%
+  group_by(`Reference Event-Organism`)%>%
+  mutate(`Reference Event-Organism`=ifelse(grepl("acinetobacter", `Reference Event-Organism`, ignore.case = T), "Acinetobacter", `Reference Event-Organism`))%>%
+  dplyr::summarize(prop=n()/nrow(vap4))
+colnames(tab1) = c("organism", "percentage")
+```
+
+```{r}
+tab1%>%
+  arrange(desc(percentage))%>%
+  slice_head(n=3)%>%
+  dplyr::summarize(sum=sum(percentage))
+tab1
+```
+
+
+```{r}
+tab1%>%
+ggplot(aes(x = reorder(organism, percentage), y = percentage))+
+  geom_label(aes(y=percentage+0.1, label=paste0(round(100*percentage, digits=1), "%")))+
+  geom_bar(stat = "identity", fill = "#477fc9") + 
+  scale_y_continuous(labels = percent_format(), limits=c(0,1))+
+  #annotate(geom="label", x=6.5, y=.7, label="Top 3 Account for 99% \n of all Organisms")+
+  #geom_vline(xintercept=5.45, color="black", linetype=5)+
+  coord_flip() + 
+  #labs(title = "Frequency by organism") + 
+  ylab(" ") + 
+  xlab("Organism")+
+  theme(axis.text.y=element_text(size=8))+
+  ggsave("gneg_frequency_by_organism_pct.png", width=6, height=4)
+```
+
+
+id - id
+yob -	year of birth
+ethnic -	ethnicity
+sex	- sex
+race	- primary race
+ref.age.event	- age of first ventilation
+ref.procedure	- type of procedure
+pneumonia.cond	- type of pneumonia
+mdr.abx	- which antibiotic is tested in microbiology
+mdr.result	- result of antibiotic tested
+mdr.organism	- type of organism growth
+mdr.mic	- minimum inhibitory concentration
+mdr.suscep	- susceptibility
+
+
+I want to take these data, grab a person from it and walk through our logic model using that person in a shiny app. I think we should have 2-3 test cases and a random option that just picks a person out at random.
+Each page can have a top panel presenting the question you are asking, a middle panel of input options, a side panel showing what the MDClone data says, a bottom panel of any notes we want to be having (for instance, needs to have been intubated >=48 hrs post diagnosis/whatever).
+
+
+Should have a page for each decision then a landing page for when it is time to make prescriptions/whatever treatment. That landing page should make you select the right number of drugs from the appropriate lists, then return a writeup of the logic used and decision made.
+
+
+```{r}
+df%>%
+  drop_na(sex)%>%
+  mutate(sex=str_to_title(sex))%>%
+  ggplot(aes(x=age))+
+  geom_histogram(aes(fill=sex))+
+  scale_fill_manual(values=spColors, drop=T)+
+  labs(fill="Sex", x="Age", y="Count")+
+  ggtitle("Age of VAP Patients")
+```
+
+
+
+```{r}
+n<-nrow(df%>%
+  drop_na(mdr.suscep))
+df%>%
+  drop_na(mdr.suscep)%>%
+  ggplot(aes(x=mdr.suscep, fill=mdr.suscep))+
+  geom_bar(aes(y=..count../sum(..count.. )), show.legend = F)+
+  scale_y_continuous(labels = percent_format(), limits=c(0,1))+
+  scale_fill_manual(values=spColors[3:1])+
+  labs(title="MDR Susceptibility", fill=" ", y="Percent", x="")+
+  geom_text(aes( label = paste0(format(100*..count../n, digits=0, drop0trailing=TRUE), "%"), y= ..count../n), stat= "count", vjust = -.5, size=6)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
