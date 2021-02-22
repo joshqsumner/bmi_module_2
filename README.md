@@ -9,3 +9,4 @@ Archived that on 2/22/21.
 
 ## Notes
 Other stuff is here or in our washu teams folders. I'll probably scrap this in a few weeks after our presentation.
+Scrapped as of 2/22/21
